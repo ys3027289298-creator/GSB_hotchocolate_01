@@ -1,5 +1,4 @@
-from hotchocolate.game import *
-import sys
+from hotchocolate.game import GameNotRunningException
 
 class CommandInterpreter():
 	"""
@@ -29,6 +28,10 @@ class CommandInterpreter():
 		:type inp: string
 		"""
 		wordList = inp.split()
+
+		if len(wordList) == 0:
+			# empty command: no state change, no output
+			return
 
 		verbSoFar = ""
 		verbIdx = -1
@@ -91,8 +94,11 @@ class BasicCommands():
 			raise GameNotRunningException()
 
 		if verb == "go": # there is a "go" in front of the direction
+			if len(args) == 0:
+				game.ui.displayText("Go where?")
+				return
 			if len(args) > 1:
-				game.ui.displayText("I understood that as far as you wanting to"
+				game.ui.displayText("I understood that as far as you wanting to "
 					"go somewhere, but I didn't recognise the direction.")
 				return
 			else:
@@ -100,9 +106,9 @@ class BasicCommands():
 		else: # the input was just a direction
 			direction = verb
 			if len(args) > 0:
-				game.ui.displayText("I understood that as far as you wanting to"
+				game.ui.displayText("I understood that as far as you wanting to "
 					"go {}, but I didn't understand what you said after that."
-					" Try just typing in \"{}\"".format(direction))
+					" Try just typing in \"{}\"".format(direction, direction))
 				return
 
 		if direction == "n":
@@ -126,21 +132,30 @@ class BasicCommands():
 		elif direction == "d":
 			direction = "down"
 
-		roomName = ""
+		roomName = None
 		for e in game.currentRoom.exits:
 			if e.direction == direction:
 				roomName = e.roomName
 
-		if roomName == "":
+		if roomName is None:
 			game.ui.displayText("You can't go that way.")
+			return
+		elif roomName not in game.rooms:
+			# exit points at a room that doesn't exist: stay put instead of
+			# crashing, so the game can continue safely
+			game.ui.displayText("That way leads nowhere.")
 			return
 		else:
 			game.currentRoom = game.rooms[roomName]
 			game.displayCurrentRoom()
 
-	def examine(game, verb, args):
+	def examine(game, verb, args=None):
 		if not game.isRunning():
 			raise GameNotRunningException()
+
+		if not args:
+			game.ui.displayText("Examine what?")
+			return
 
 		itemName = " ".join(args)
 		item = game.getItem(itemName)
@@ -150,9 +165,13 @@ class BasicCommands():
 		else:
 			game.ui.displayText(item.outputText())
 
-	def take(game, verb, args):
+	def take(game, verb, args=None):
 		if not game.isRunning():
 			raise GameNotRunningException()
+
+		if not args:
+			game.ui.displayText("Take what?")
+			return
 
 		itemName = " ".join(args)
 
@@ -161,7 +180,7 @@ class BasicCommands():
 			# to copy it so we can iterate through them safely
 			items = game.currentRoom.items.copy()
 			for name, item in items.items():
-				if item.takeable:
+				if item.takeable and name not in game.inventory:
 					game.currentRoom.removeItem(name)
 					game.addToInventory(item)
 			game.ui.displayText("Taken.")
@@ -182,7 +201,7 @@ class BasicCommands():
 	def quit(game, verb):
 		assent = game.ui.askYesNo("Do you really want to quit?")
 		if assent:
-			sys.exit()
+			game.stop()
 
 	basicCommandDict = {"look": look,
 				"l": look,

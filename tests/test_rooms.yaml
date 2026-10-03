@@ -1,0 +1,29 @@
+- !Room
+    name: Start
+    description: The starting room.
+    items:
+        - !Item
+          name: coin
+          description: A shiny coin.
+        - !Item
+          name: candle
+          description: A wax candle.
+          takeable: False
+    exits:
+        - !Exit
+          direction: east
+          roomName: East Room
+- !Room
+    name: East Room
+    description: The room to the east.
+    items:
+        - !Item
+          name: key
+          description: A brass key.
+    exits:
+        - !Exit
+          direction: west
+          roomName: Start
+        - !Exit
+          direction: down
+          roomName: Nowhere

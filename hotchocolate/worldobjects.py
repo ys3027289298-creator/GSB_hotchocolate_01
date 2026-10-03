@@ -81,6 +81,11 @@ class Room():
 				):
 		self.name = name
 		self.description = description
+		self.setValues(hideItems=hideItems,
+					hideName=hideName,
+					hideDescription=hideDescription,
+					items=items,
+					exits=exits)
 
 
 	def setValues(self,
@@ -198,7 +203,7 @@ class Exit():
 		self.roomName = roomName
 
 	def __repr__(self):
-		return "{}: {}".format(self.direction, self.roomName, yaml.SafeLoader)
+		return "{}: {}".format(self.direction, self.roomName)
 
 # Constructor for YAML
 def exitConstructor(loader, node) :
