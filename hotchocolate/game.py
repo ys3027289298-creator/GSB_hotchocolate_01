@@ -4,8 +4,8 @@ import hotchocolate.commands as commands
 import yaml
 
 class Game():
-	running = False
 	def __init__(self, roomFilePath, uiClass=ui.CommandLineUI):
+		self.running = False
 		self.currentRoom = None
 		self.rooms = {}
 		self.ui = uiClass()
@@ -13,11 +13,11 @@ class Game():
 		self.inventory = {}
 
 	def isRunning(self):
-		return Game.running
+		return self.running
 
 	def loadData(self):
-		f = open(self.roomFilePath)
-		roomsAsList = yaml.safe_load(f)
+		with open(self.roomFilePath) as f:
+			roomsAsList = yaml.safe_load(f)
 
 		# make a dictionary from the room list, with the room name as the key
 		for room in roomsAsList:
@@ -26,8 +26,14 @@ class Game():
 		self.currentRoom = roomsAsList[0] #TODO: make this configurable from file
 
 	def mainLoop(self):
-		while True:
-			inp = self.ui.getUserInput()
+		while self.running:
+			try:
+				inp = self.ui.getUserInput()
+			except EOFError:
+				# input stream has ended (eg. end of a scripted input or
+				# Ctrl-D): terminate the loop instead of crashing
+				self.running = False
+				return
 			self.commandInterpreter.parse(inp)
 
 	def displayCurrentRoom(self):
@@ -35,7 +41,7 @@ class Game():
 		self.ui.displayText(roomDesc)
 
 	def run(self):
-		Game.running = True
+		self.running = True
 		self.commandInterpreter = commands.CommandInterpreter(self)
 		self.loadData()
 		self.displayCurrentRoom()

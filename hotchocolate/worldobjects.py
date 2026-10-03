@@ -81,6 +81,7 @@ class Room():
 				):
 		self.name = name
 		self.description = description
+		self.setValues(hideItems, hideName, hideDescription, items, exits)
 
 
 	def setValues(self,
